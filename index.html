@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>beausle</title>
+	<style>
+		html {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			color: #eee;
+			font-family: monospace;
+		}
+		body {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			overflow: hidden;
+			background: #222;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+		}
+		#game {
+			width: 600px;
+			height: 800px;
+			background: #333;
+
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+		#title {
+			width: 100%;
+			height: 5%;
+			background: #333;
+			text-align: center;
+			font-size: 2.5em;
+		}
+		#photo {
+			width: calc(100% - 20px);
+			height: 45%;
+			object-fit: contain;
+		}
+		#stats {
+			width: 95%;
+			height: 30%;
+			background: #333;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-evenly;
+		}
+		.stat {
+			filter:grayscale(100%);
+			font-size: 2em;
+		}
+		/*.stat::first-letter {
+			font-size: 1.9em;
+		}*/
+		#controls {
+			width: 100%;
+			height: 20%;
+			background: #333;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-evenly;
+			align-items: center;
+			font-size: 1.5em;
+		}
+		#labels {
+			width: 95%;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+		input[type="range"] {
+			width: 90%;
+			height: 45px;
+			-webkit-appearance: none;
+			overflow: hidden;
+			cursor: pointer;
+		}
+		input[type="range"]::-webkit-slider-runnable-track {
+			background: linear-gradient(0.25turn, #39e,#3e9);
+		}
+		input[type="range"]::-webkit-slider-thumb {
+			width: 30px;
+			height: 45px;
+			-webkit-appearance: none;
+			background: #eee;
+			box-shadow: 600px 0 0 600px #222;
+			cursor: ew-resize;
+		}
+	</style>
+</head>
+<body>
+	<div id="game">
+		<div id="title">⌂ beausle 1</div>
+		<img id="photo" src="images/5122.jpg">
+		<div id="stats">
+			<div class="stat" id="streetaddress">📍 ?</div>
+			<div class="stat" id="city">🗺️ ?</div>
+			<div class="stat" id="beds">🛏 ?</div>
+			<div class="stat" id="baths">🛁 ?</div>
+			<div class="stat" id="squarefeet">🪤 ? ft²</div>
+			<div class="stat" id="price">💰 $ ?</div>
+		</div>
+		<div id="controls">
+			<div id="guess">$ 1,097,500</div>
+			<div id="labels">
+				<div id="min">$ 195,000</div>
+				<div id="max">$ 2,000,000</div>
+			</div>
+			<input id="slider" type="range" min="195000" max="2000000" step = "1000">
+			<div id="hint">-</div>
+		</div>
+	</div>
+	<script type="text/javascript" src="data.json"></script>
+	<script type="text/javascript">
+		let house_id = Math.floor(Math.random()*15474);
+		let house_data = houses[house_id];
+		let guess_counter = 1;
+
+		let photo = document.querySelector("#photo");
+		photo.src = `images/${house_id}.jpg`;
+
+		let title = document.querySelector("#title");
+		let slider = document.querySelector("#slider");
+		let guess = document.querySelector("#guess");
+		let hint = document.querySelector("#hint");
+		let min = document.querySelector("#min");
+		let max = document.querySelector("#max");
+
+		let hints = {
+			"streetaddress": document.querySelector("#streetaddress"),
+			"city": document.querySelector("#city"),
+			"beds": document.querySelector("#beds"),
+			"baths": document.querySelector("#baths"),
+			"squarefeet": document.querySelector("#squarefeet"),
+			"price": document.querySelector("#price"),
+		};
+
+		let keyboard_coordinates = {
+			"`": {"longitude": -1, "latitude": 3},
+			"1": {"longitude": 0, "latitude": 3},
+			"2": {"longitude": 1, "latitude": 3},
+			"3": {"longitude": 2, "latitude": 3},
+			"4": {"longitude": 3, "latitude": 3},
+			"5": {"longitude": 4, "latitude": 3},
+			"6": {"longitude": 5, "latitude": 3},
+			"7": {"longitude": 6, "latitude": 3},
+			"8": {"longitude": 7, "latitude": 3},
+			"9": {"longitude": 8, "latitude": 3},
+			"0": {"longitude": 9, "latitude": 3},
+			"-": {"longitude": 10, "latitude": 3},
+			"+": {"longitude": 11, "latitude": 3},
+			"q": {"longitude": 0, "latitude": 2},
+			"w": {"longitude": 1, "latitude": 2},
+			"e": {"longitude": 2, "latitude": 2},
+			"r": {"longitude": 3, "latitude": 2},
+			"t": {"longitude": 4, "latitude": 2},
+			"y": {"longitude": 5, "latitude": 2},
+			"u": {"longitude": 6, "latitude": 2},
+			"i": {"longitude": 7, "latitude": 2},
+			"o": {"longitude": 8, "latitude": 2},
+			"p": {"longitude": 9, "latitude": 2},
+			"[": {"longitude": 10, "latitude": 2},
+			"]": {"longitude": 11, "latitude": 2},
+			"\\": {"longitude": 12, "latitude": 2},
+			"a": {"longitude": 0, "latitude": 1},
+			"s": {"longitude": 1, "latitude": 1},
+			"d": {"longitude": 2, "latitude": 1},
+			"f": {"longitude": 3, "latitude": 1},
+			"g": {"longitude": 4, "latitude": 1},
+			"h": {"longitude": 5, "latitude": 1},
+			"j": {"longitude": 6, "latitude": 1},
+			"k": {"longitude": 7, "latitude": 1},
+			"l": {"longitude": 8, "latitude": 1},
+			";": {"longitude": 9, "latitude": 1},
+			"'": {"longitude": 10, "latitude": 1},
+			"z": {"longitude": 0, "latitude": 0}, //origin
+			"x": {"longitude": 1, "latitude": 0},
+			"c": {"longitude": 2, "latitude": 0},
+			"v": {"longitude": 3, "latitude": 0},
+			"b": {"longitude": 4, "latitude": 0},
+			"n": {"longitude": 5, "latitude": 0},
+			"m": {"longitude": 6, "latitude": 0},
+			",": {"longitude": 7, "latitude": 0},
+			".": {"longitude": 8, "latitude": 0},
+			"/": {"longitude": 9, "latitude": 0},
+			" ": {"longitude": 5, "latitude": -1},
+		}
+
+		let animation_timeouts = [];
+		let animated_typing = (text, element, wpm) => {
+			let runtime = (60000 / wpm) * (text.length / 5);
+			console.log(`total runtime: ${runtime} ms`);
+			let inputs = text.split("");
+			let distances = [];
+			let total_distance = 0;
+			let current_position = {"longitude": 0, "latitude": 0};
+			for(let i = 0; i < inputs.length; i++) {
+				let target_latitude = keyboard_coordinates[inputs[i].toLowerCase()] ? keyboard_coordinates[inputs[i].toLowerCase()].latitude : 0;
+				let target_longitude = keyboard_coordinates[inputs[i].toLowerCase()] ? keyboard_coordinates[inputs[i].toLowerCase()].longitude : 0;
+				let rise = current_position.latitude - target_latitude;
+				let run = current_position.longitude - target_longitude;
+				current_position.latitude = target_latitude;
+				current_position.longitude = target_longitude;
+				let distance = Math.sqrt(rise**2 + run**2) + 10; //for performance, don't bother taking squareroot
+				distances.push(distance);
+				total_distance += distance;
+			}
+			let tick = runtime / total_distance;
+
+			let distance_traveled = 0;
+			for(let i = 0; i < inputs.length; i++) {
+				distance_traveled += distances[i];
+				animation_timeouts.push(setTimeout(() => {element.textContent += inputs[i];}, tick * distance_traveled));
+			}
+		}
+
+		let reveal_hint = (hint_number) => {
+			switch(hint_number) {
+				case 1:
+					hints["streetaddress"].innerText = `📍 `;
+					animated_typing(`${house_data.street}`, hints["streetaddress"], 180);
+					break;
+				case 2:
+					hints["city"].innerText = `🗺️ `;
+					animated_typing(`${house_data.citi}`, hints["city"], 180);
+					break;
+				case 3:
+					hints["beds"].innerText = `🛏 `;
+					animated_typing(`${house_data.bed} beds`, hints["beds"], 180);
+					break;
+				case 4:
+					hints["baths"].innerText = `🛁 `;
+					animated_typing(`${house_data.bath} baths`, hints["baths"], 180);
+					break;
+				case 5:
+					hints["squarefeet"].innerText = `🪤 `;
+					animated_typing(`${house_data.sqft} ft²`, hints["squarefeet"], 180);
+					break;
+				case "all":
+					for(let i = 0; i < animation_timeouts.length; i++) {
+						clearInterval(animation_timeouts[i]);
+					}
+					animation_timeouts = [];
+					hints["streetaddress"].innerText = `📍 ${house_data.street}`;
+					hints["city"].innerText = `🗺️ ${house_data.citi}`;
+					hints["beds"].innerText = `🛏 ${house_data.bed} beds`;
+					hints["baths"].innerText = `🛁 ${house_data.bath} baths`;
+					hints["squarefeet"].innerText = `🪤 ${house_data.sqft} ft²`;
+					hints["price"].innerText = `💰 $ ${house_data.price.toLocaleString()}`;
+					break;
+			}
+		}
+
+		slider.addEventListener("input", () => {guess.innerText = `$ ${Number(slider.value).toLocaleString()}`;});
+		slider.addEventListener("change", () => {
+			if(hint.innerText === "you win!") {
+				window.location.reload();
+			}
+			if(slider.value > 1.1 * house_data.price) {
+				slider.max = slider.value;
+				max.innerText = `$ ${Number(slider.value).toLocaleString()}`;
+				hint.innerText = "↓";
+				//slider.value = Math.round((Number(slider.min) + Number(slider.max)) / 2, 1000);
+			}
+			else if(slider.value < 0.9 * house_data.price) {
+				slider.min = slider.value;
+				min.innerText = `$ ${Number(slider.value).toLocaleString()}`;
+				hint.innerText = "↑";
+				//slider.value = Math.round((Number(slider.min) + Number(slider.max)) / 2, 1000);
+			}
+			else if(slider.value > 1.05 * house_data.price) {
+				slider.max = slider.value;
+				max.innerText = `$ ${Number(slider.value).toLocaleString()}`;
+				hint.innerText = "↘";
+			}
+			else if(slider.value < 0.95 * house_data.price) {
+				slider.min = slider.value;
+				min.innerText = `$ ${Number(slider.value).toLocaleString()}`;
+				hint.innerText = "↗";
+				//slider.value = Math.round((Number(slider.min) + Number(slider.max)) / 2, 1000);
+			}
+			else {
+				hint.innerText = "you win!";
+				reveal_hint("all");
+				return;
+			}
+			reveal_hint(guess_counter);
+			guess_counter++;
+			title.innerText = `⌂ beausle ${guess_counter}`;
+		});
+	</script>
+</body>
+</html>
